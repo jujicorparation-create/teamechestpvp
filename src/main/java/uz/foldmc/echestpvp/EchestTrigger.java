@@ -8,10 +8,10 @@ import net.minecraft.screen.PlayerScreenHandler;
 
 public class EchestTrigger {
 
+    // ==== SOZLAMALAR ====
+    // Faqat G tugmasi bilan ishlaydi - avto-damage trigger yo'q
     private static final long COOLDOWN_MS = 1500;
-    private static final int GUI_WAIT_TIMEOUT_TICKS = 60;
-
-    private static float lastHealth = -1f;
+    private static final int GUI_WAIT_TIMEOUT_TICKS = 60; // 3 sekund
 
     private enum State { IDLE, WAITING_GUI, DEPOSITING, DONE }
 
@@ -27,20 +27,12 @@ public class EchestTrigger {
 
         switch (state) {
             case IDLE -> {
-                if (client.currentScreen != null) {
-                    lastHealth = player.getHealth();
-                    return;
-                }
-
-                float currentHealth = player.getHealth();
-                boolean tookDamage = lastHealth >= 0 && currentHealth < lastHealth;
-                lastHealth = currentHealth;
+                if (client.currentScreen != null) return;
 
                 boolean cooldownOk = System.currentTimeMillis() - lastTriggerTime >= COOLDOWN_MS;
                 boolean manualTrigger = keyPressed && cooldownOk;
-                boolean hitTrigger = tookDamage;
 
-                if (manualTrigger || hitTrigger) {
+                if (manualTrigger) {
                     lastTriggerTime = System.currentTimeMillis();
                     EchestDeposit.unequipArmorToInventory(client);
                     if (player.networkHandler != null) {
