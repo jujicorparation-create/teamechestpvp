@@ -22,6 +22,6 @@ public class AutoEchestPvpMod implements ClientModInitializer {
         ));
 
         ClientTickEvents.END_CLIENT_TICK.register(EchestTrigger::onTick);
-        System.out.println("[AutoEchestPvP] yuklandi. HP threshold: " + EchestTrigger.HP_THRESHOLD + ", keybind: G");
+        System.out.println("[AutoEchestPvP] yuklandi. Trigger: G tugmasi");
     }
-            }
+                                                  }
