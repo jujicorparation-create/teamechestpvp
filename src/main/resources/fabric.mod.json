@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "id": "auto-echest-pvp",
+  "version": "${version}",
+  "name": "Auto Echest PvP",
+  "description": "Low HP paytida armor va inventarni /team echest ga avtomatik joylaydi",
+  "authors": ["huyna"],
+  "contact": {},
+  "license": "MIT",
+  "icon": "assets/auto-echest-pvp/icon.png",
+  "environment": "client",
+  "entrypoints": {
+    "client": [
+      "uz.foldmc.echestpvp.AutoEchestPvpMod"
+    ]
+  },
+  "depends": {
+    "fabricloader": ">=0.16.10",
+    "minecraft": "~1.21.4",
+    "fabric-api": "*"
+  }
+}
+
