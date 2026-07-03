@@ -8,17 +8,12 @@ import net.minecraft.screen.PlayerScreenHandler;
 
 public class EchestTrigger {
 
-    // ==== SOZLAMALAR ====
-    public static final float HP_THRESHOLD = 8.0f; // 4 yurak - bosmasang shu HPda avtomatik ishlaydi
-    private static final long COOLDOWN_MS = 2000; // tezlashtirildi (avval 5000)
-    private static final int GUI_WAIT_TIMEOUT_TICKS = 60; // 3 sekund (avval 5)
+    private static final long COOLDOWN_MS = 1500;
+    private static final int GUI_WAIT_TIMEOUT_TICKS = 60;
 
-    private enum State {
-        IDLE,
-        WAITING_GUI,
-        DEPOSITING,
-        DONE
-    }
+    private static float lastHealth = -1f;
+
+    private enum State { IDLE, WAITING_GUI, DEPOSITING, DONE }
 
     private static State state = State.IDLE;
     private static long lastTriggerTime = 0;
@@ -32,13 +27,20 @@ public class EchestTrigger {
 
         switch (state) {
             case IDLE -> {
-                if (client.currentScreen != null) return;
+                if (client.currentScreen != null) {
+                    lastHealth = player.getHealth();
+                    return;
+                }
+
+                float currentHealth = player.getHealth();
+                boolean tookDamage = lastHealth >= 0 && currentHealth < lastHealth;
+                lastHealth = currentHealth;
 
                 boolean cooldownOk = System.currentTimeMillis() - lastTriggerTime >= COOLDOWN_MS;
-                boolean hpTrigger = player.getHealth() <= HP_THRESHOLD && cooldownOk;
                 boolean manualTrigger = keyPressed && cooldownOk;
+                boolean hitTrigger = tookDamage;
 
-                if (hpTrigger || manualTrigger) {
+                if (manualTrigger || hitTrigger) {
                     lastTriggerTime = System.currentTimeMillis();
                     EchestDeposit.unequipArmorToInventory(client);
                     if (player.networkHandler != null) {
@@ -75,4 +77,4 @@ public class EchestTrigger {
             }
         }
     }
-            }
+    }
