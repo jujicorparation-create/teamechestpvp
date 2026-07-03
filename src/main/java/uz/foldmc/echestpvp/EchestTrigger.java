@@ -9,14 +9,12 @@ import net.minecraft.screen.PlayerScreenHandler;
 public class EchestTrigger {
 
     // ==== SOZLAMALAR ====
-    public static final float HP_THRESHOLD = 6.0f; // 3 yurak
-    private static final long COOLDOWN_MS = 5000; // trigger orasidagi minimal vaqt
-    private static final int GUI_WAIT_TIMEOUT_TICKS = 100; // 5 sekund (20 tick/sek)
-    private static final int TICKS_AFTER_COMMAND = 4; // command yuborilgach armor sync bo'lishini kutish
+    public static final float HP_THRESHOLD = 8.0f; // 4 yurak - bosmasang shu HPda avtomatik ishlaydi
+    private static final long COOLDOWN_MS = 2000; // tezlashtirildi (avval 5000)
+    private static final int GUI_WAIT_TIMEOUT_TICKS = 60; // 3 sekund (avval 5)
 
     private enum State {
         IDLE,
-        ARMOR_UNEQUIPPED,
         WAITING_GUI,
         DEPOSITING,
         DONE
@@ -30,21 +28,19 @@ public class EchestTrigger {
         ClientPlayerEntity player = client.player;
         if (player == null) return;
 
+        boolean keyPressed = AutoEchestPvpMod.triggerKey != null && AutoEchestPvpMod.triggerKey.wasPressed();
+
         switch (state) {
             case IDLE -> {
-                if (client.currentScreen != null) return; // biror GUI ochiq bo'lsa tegmaymiz
-                if (player.getHealth() <= HP_THRESHOLD
-                        && System.currentTimeMillis() - lastTriggerTime >= COOLDOWN_MS) {
+                if (client.currentScreen != null) return;
+
+                boolean cooldownOk = System.currentTimeMillis() - lastTriggerTime >= COOLDOWN_MS;
+                boolean hpTrigger = player.getHealth() <= HP_THRESHOLD && cooldownOk;
+                boolean manualTrigger = keyPressed && cooldownOk;
+
+                if (hpTrigger || manualTrigger) {
                     lastTriggerTime = System.currentTimeMillis();
                     EchestDeposit.unequipArmorToInventory(client);
-                    state = State.ARMOR_UNEQUIPPED;
-                    waitCounter = 0;
-                }
-            }
-
-            case ARMOR_UNEQUIPPED -> {
-                waitCounter++;
-                if (waitCounter >= TICKS_AFTER_COMMAND) {
                     if (player.networkHandler != null) {
                         player.networkHandler.sendChatCommand("team echest");
                     }
@@ -60,7 +56,6 @@ public class EchestTrigger {
                     state = State.DEPOSITING;
                     waitCounter = 0;
                 } else if (waitCounter >= GUI_WAIT_TIMEOUT_TICKS) {
-                    // echest ochilmadi (lag yoki boshqa sabab) - qayta urinish uchun reset
                     System.out.println("[AutoEchestPvP] echest GUI ochilmadi, timeout.");
                     state = State.IDLE;
                 }
@@ -75,13 +70,9 @@ public class EchestTrigger {
             }
 
             case DONE -> {
-                waitCounter++;
-                if (waitCounter >= 2) { // 1-2 tick GUI'ni ko'rsatib turamiz, keyin yopamiz
-                    client.setScreen(null);
-                    state = State.IDLE;
-                }
+                client.setScreen(null);
+                state = State.IDLE;
             }
         }
     }
-}
-
+            }
