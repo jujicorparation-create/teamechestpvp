@@ -22,6 +22,6 @@ public class AutoEchestPvpMod implements ClientModInitializer {
         ));
 
         ClientTickEvents.END_CLIENT_TICK.register(EchestTrigger::onTick);
-        System.out.println("[AutoEchestPvP] yuklandi. Trigger: G tugmasi");
+        System.out.println("[AutoEchestPvP] yuklandi. Maksimal tezlik rejimi faol! Trigger: G");
     }
-                                                  }
+}
