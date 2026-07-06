@@ -1,6 +1,5 @@
 package uz.foldmc.echestpvp;
 
-import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.client.gui.screen.ingame.HandledScreen;
@@ -8,12 +7,11 @@ import net.minecraft.screen.PlayerScreenHandler;
 
 public class EchestTrigger {
 
-    // ==== SOZLAMALAR ====
-    // Faqat G tugmasi bilan ishlaydi - avto-damage trigger yo'q
     private static final long COOLDOWN_MS = 1500;
     private static final int GUI_WAIT_TIMEOUT_TICKS = 60; // 3 sekund
 
-    private enum State { IDLE, WAITING_GUI, DEPOSITING, DONE }
+    // Ortiqcha DEPOSITING va DONE holatlarini o'chirdik!
+    private enum State { IDLE, WAITING_GUI }
 
     private static State state = State.IDLE;
     private static long lastTriggerTime = 0;
@@ -34,9 +32,13 @@ public class EchestTrigger {
 
                 if (manualTrigger) {
                     lastTriggerTime = System.currentTimeMillis();
+                    
+                    // 1. Zirhlarni zudlik bilan yechish (0-tick)
                     EchestDeposit.unequipArmorToInventory(client);
+                    
+                    // 2. Buyruqni to'g'ridan-to'g'ri sendCommand orqali tezkor yuborish
                     if (player.networkHandler != null) {
-                        player.networkHandler.sendChatCommand("team echest");
+                        player.networkHandler.sendCommand("team echest");
                     }
                     state = State.WAITING_GUI;
                     waitCounter = 0;
@@ -47,25 +49,20 @@ public class EchestTrigger {
                 waitCounter++;
                 if (client.currentScreen instanceof HandledScreen<?> screen
                         && !(screen.getScreenHandler() instanceof PlayerScreenHandler)) {
-                    state = State.DEPOSITING;
+                    
+                    // CHAOMOO TEZLIGIDA: Ekran aniqlangan soniyaning o'zida narsalarni echestga otadi
+                    EchestDeposit.depositAllToContainer(client, screen);
+                    
+                    // Va hech qanday keyingi tickni kutmasdan ekran shu zaxoti yopiladi
+                    screen.close();
+                    client.setScreen(null);
+                    
+                    state = State.IDLE;
                     waitCounter = 0;
                 } else if (waitCounter >= GUI_WAIT_TIMEOUT_TICKS) {
                     System.out.println("[AutoEchestPvP] echest GUI ochilmadi, timeout.");
                     state = State.IDLE;
                 }
-            }
-
-            case DEPOSITING -> {
-                if (client.currentScreen instanceof HandledScreen<?> screen) {
-                    EchestDeposit.depositAllToContainer(client, screen);
-                }
-                state = State.DONE;
-                waitCounter = 0;
-            }
-
-            case DONE -> {
-                client.setScreen(null);
-                state = State.IDLE;
             }
         }
     }
